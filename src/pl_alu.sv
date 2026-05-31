@@ -3,16 +3,16 @@
 // Unidade Logica e Aritmetica de 32 bits -- RV32I pipelined
 //
 // Codificacao de operacao (Operation[3:0]):
-//   4'd01 : ADD  -- adicao com sinal
-//   4'd02 : SUB  -- subtracao com sinal  (BEQ usa Zero)
-//   4'd03 : XOR  -- OU-exclusivo bit a bit
-//   4'd04 : OR   -- OU bit a bit
-//   4'd05 : AND  -- E bit a bit
-//   4'd06 : SLL  -- deslocamento logico a esquerda
-//   4'd07 : SRL  -- deslocamento logico a direita
-//   4'd08 : SRA  -- deslocamento aritmetico a direita
-//   4'd09 : SLTU -- set-less-than sem sinal
-//   4'd11 : SLT  -- set-less-than com sinal
+//   4'd01 : ADD,addi  -- adicao com sinal
+//   4'd02 : SUB       -- subtracao com sinal  (BEQ usa Zero)
+//   4'd03 : XOR       -- OU-exclusivo bit a bit
+//   4'd04 : OR        -- OU bit a bit
+//   4'd05 : AND,andi  -- E bit a bit
+//   4'd06 : SLL,slli  -- deslocamento logico a esquerda
+//   4'd07 : SRL,srli  -- deslocamento logico a direita
+//   4'd08 : SRA,srai  -- deslocamento aritmetico a direita
+//   4'd09 : SLTU      -- set-less-than sem sinal
+//   4'd11 : SLT,srti  -- set-less-than com sinal
 // =============================================================================
 
 `timescale 1ns / 1ps
@@ -27,12 +27,12 @@ module pl_alu (
 
     always_comb begin
         case (Operation)
-            4'd01:   ALUResult = $signed(SrcA) + $signed(SrcB);
+            4'd01:   ALUResult = $signed(SrcA) + $signed(SrcB); 
             4'd02:   ALUResult = $signed(SrcA) - $signed(SrcB);
             4'd03:   ALUResult = SrcA ^ SrcB;
             4'd04:   ALUResult = SrcA | SrcB;
             4'd05:   ALUResult = SrcA & SrcB;
-            4'd06:   ALUResult = SrcA << SrcB[4:0];
+            4'd06:   ALUResult = SrcA << SrcB[4:0]; 
             4'd07:   ALUResult = SrcA >> SrcB[4:0];
             4'd08:   ALUResult = 32'($signed(SrcA) >>> SrcB[4:0]);
             4'd09:   ALUResult = 32'(SrcA < SrcB);
