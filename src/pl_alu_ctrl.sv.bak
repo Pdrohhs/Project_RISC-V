@@ -61,19 +61,18 @@ module pl_alu_ctrl (
                     3'h7: Operation = 4'd05;  // AND
                     default: Operation = 4'd01;
                 endcase
-				end	
+			end	
 			
-				2'b11:begin //I-type: decodificar Funct3
-					case(Funct3)
-						3'b000:Operation = 4'd01;  //addi
-						3'b001:Operation = 4'd06;  //slli
-						3'b010:Operation = 4'd11;  //srti
-						3'b101:Operation = Funct7[5] ? 4'd08 : 4'd07; // srai ou srli
-						3'b110:Operation = 4'd04;  //ori
-						3'b111:Operation = 4'd05; //andi
-						default: Operation = 4'd01;
-					endcase
-				end
+			2'b11:begin //I-type: decodificar Funct3
+				case(Funct3)
+				3'b000:Operation = 4'd01  //addi
+				3'b001:Operation = 4'd06;  //slli
+				3'b010:Operation = 4'd11;  //srti
+				3'b101:Operation = Funct7[5] ? 4'd08 : 4'd07; // srai ou srli
+				3'b110:Operation = 4'd04  //ori
+				3'b111:Operation = 4'd05 //andi
+				endcase
+            end
 
             default: Operation = 4'd01;
         endcase
