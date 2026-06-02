@@ -7,7 +7,7 @@
 //
 // Instrucoes suportadas:
 //   R-type  (0110011): add,and,xor,sll,srl,sra,sltu
-//	  I-type  (0010011): addi,slli,srti,srli,srai,ori,andi
+//	 I-type  (0010011): addi,slli,srti,srli,srai,ori,andi
 //   Load    (0000011): lw
 //   S-type  (0100011): sw
 //   B-type  (1100011): beq
@@ -40,7 +40,7 @@ module pl_control (
 
     localparam R_TYPE = 7'b0110011;
     localparam LOAD   = 7'b0000011;
-	 localparam I_TYPE = 7'b0010011;
+	localparam I-TYPE = 7'b0010011;
     localparam STORE  = 7'b0100011;
     localparam BRANCH = 7'b1100011;
 
@@ -60,7 +60,7 @@ module pl_control (
                 RegWrite = 1'b1;
                 ALUOp    = 2'b10;
             end
-			I_TYPE: begin
+			I-TYPE: begin
 				ALUSrc   = 1'b1;
 				MemtoReg = 1'b0;
 				RegWrite = 1'b1;

@@ -19,7 +19,7 @@ module pl_sign_ext (
 );
 
     localparam LOAD   = 7'b0000011;
-	 localparam I_TYPE = 7'b0010011;
+	localparam I-TYPE = 7'b0010011;
     localparam STORE  = 7'b0100011;
     localparam BRANCH = 7'b1100011;
 
@@ -27,10 +27,10 @@ module pl_sign_ext (
         case (Instr[6:0])
             LOAD:   ImmExt = {{20{Instr[31]}}, Instr[31:20]};
 			
-			I_TYPE:begin
+			I-TYPE:begin
 				case(Instr[14:12])
-					3'b001: ImmExt = {{27{Instr[24]}}, Instr[24:20]};//slli
-					3'b101: ImmExt = {{27{Instr[24]}}, Instr[24:20]};//srli ou srai
+					3'b001: ImmExt {{27{Instr[24]}}, Instr[24:20]};//slli
+					3'b101: ImmExt {{27{Instr[24]}}, Instr[24:20]};//srli ou srai
 					default: ImmExt = {{20{Instr[31]}}, Instr[31:20]}; //addi,srti,ori,andi
 				endcase
 			end	
