@@ -237,8 +237,9 @@ module pl_cpu_tb;
     // =========================================================================
     function automatic integer compare_with_golden();
         integer gfd, ofd;
-        string  gline, oline;
+        reg [8*256-1:0] gline, oline;  // reg em vez de string (iverilog)
         integer errs;
+        integer gstatus, ostatus;
         errs = 0;
 
         gfd = $fopen("golden.txt", "r");
@@ -254,10 +255,10 @@ module pl_cpu_tb;
         end
 
         while (!$feof(gfd)) begin
-            void'($fgets(gline, gfd));
-            void'($fgets(oline, ofd));
+            gstatus = $fgets(gline, gfd);
+            ostatus = $fgets(oline, ofd);
             if (gline != oline) begin
-                $display("DIFF golden: %s  output: %s", gline, oline);
+                $display("DIFF golden: %0s  output: %0s", gline, oline);
                 errs++;
             end
         end
