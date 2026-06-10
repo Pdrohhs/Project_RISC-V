@@ -9,3 +9,5 @@ modelsim/*
 assembler/*
 !assembler/assembler.py
 !assembler/hello.asm
+Especificação do Projeto RISC-V (RV32I).pdf
+sim.vvp
