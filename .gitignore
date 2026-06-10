@@ -11,3 +11,5 @@ assembler/*
 !assembler/hello.asm
 Especificação do Projeto RISC-V (RV32I).pdf
 sim.vvp
+instruction.mif
+program.hex
