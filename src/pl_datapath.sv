@@ -319,6 +319,7 @@ module pl_datapath (
         .MemWrite  (ex_mem.mem_write & ~mmio_sel),
         .addr      (ex_mem.alu_result[9:2]),
         .WriteData (ex_mem.write_data),
+		  .funct3    (ex_mem.funct3),
         .ReadData  (dmem_rd)
     );
 
