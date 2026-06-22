@@ -8,24 +8,26 @@
 // Instrucoes suportadas:
 //   R-type  (0110011): add,and,xor,sll,srl,sra,sltu
 //	 I-type  (0010011): addi,slli,srti,srli,srai,ori,andi
-//   Load    (0000011): lw
-//   S-type  (0100011): sw
-//   B-type  (1100011): beq, bne, blt, bge, bltu, bgeu
+//   Load    (0000011): lw,lb,lh,lbu,lhu
+//   S-type  (0100011): sw,sb,sh
+//   B-type  (1100011): beq,bne,blt,bge,bltu,bgeu
 //   JAL     (1101111): jal
 //   JALR    (1100111): jalr
+//	  Lui     (0110111): lui
+//   Auipc   (0010111): auipc
 //
 // Tabela de sinais de controle:
-//   Sinal     | R-type | I-type | lw | sw | B-type | JAL | JALR
-//   ----------|--------|--------|----|----|--------|-----|-----
-//   ALUSrc    |   0    |   1    |  1 |  1 |   0    |  0  |  1
-//   MemtoReg  |   0    |   0    |  1 |  - |   -    |  0  |  0
-//   RegWrite  |   1    |   1    |  1 |  0 |   0    |  1  |  1
-//   MemRead   |   0    |   0    |  1 |  0 |   0    |  0  |  0
-//   MemWrite  |   0    |   0    |  0 |  1 |   0    |  0  |  0
-//   Branch    |   0    |   0    |  0 |  0 |   1    |  1  |  1
-//   JalSrc    |   0    |   0    |  0 |  0 |   0    |  1  |  1
-//   ALUOp[1]  |   1    |   1    |  0 |  0 |   0    |  0  |  0
-//   ALUOp[0]  |   0    |   1    |  0 |  0 |   1    |  0  |  0
+//   Sinal     | R-type | I-type | lw | sw | B-type | JAL | JALR | Lui | Auipc
+//   ----------|--------|--------|----|----|--------|-----|-------------------
+//   ALUSrc    |   0    |   1    |  1 |  1 |   0    |  0  |  1	  |  1  |  0
+//   MemtoReg  |   0    |   0    |  1 |  - |   -    |  0  |  0   |  0  |  0 
+//   RegWrite  |   1    |   1    |  1 |  0 |   0    |  1  |  1   |  1  |  1
+//   MemRead   |   0    |   0    |  1 |  0 |   0    |  0  |  0   |  0  |  0
+//   MemWrite  |   0    |   0    |  0 |  1 |   0    |  0  |  0   |  0  |  0
+//   Branch    |   0    |   0    |  0 |  0 |   1    |  1  |  1   |  0  |  0
+//   JalSrc    |   0    |   0    |  0 |  0 |   0    |  1  |  1   |  0  |  1
+//   ALUOp[1]  |   1    |   1    |  0 |  0 |   0    |  0  |  0   |  0  |  0
+//   ALUOp[0]  |   0    |   1    |  0 |  0 |   1    |  0  |  0   |  0  |  0
 // =============================================================================
 
 `timescale 1ns / 1ps
@@ -49,6 +51,8 @@ module pl_control (
     localparam BRANCH = 7'b1100011;
     localparam JAL    = 7'b1101111;
     localparam JALR   = 7'b1100111;
+	 localparam LUI    = 7'b0110111;
+	 localparam AUIPC  = 7'b0010111;
 
     always_comb begin
         ALUSrc   = 1'b0;
@@ -103,6 +107,19 @@ module pl_control (
                 Branch   = 1'b1;
                 JalSrc   = 1'b1;
                 ALUOp    = 2'b00;  // ADD: calcula rs1 + imm
+            end
+				LUI: begin
+                ALUSrc   = 1'b1; 
+                MemtoReg = 1'b0;
+                RegWrite = 1'b1;
+                MemRead  = 1'b0;
+                ALUOp    = 2'b00;
+				AUIPC: begin
+                ALUSrc   = 1'b0;
+                RegWrite = 1'b1;
+					 Branch   = 1'b0;
+					 JalSrc   = 1'b1;
+                ALUOp    = 2'b00;
             end
             default: ; // sinais permanecem em zero (seguro)
         endcase
