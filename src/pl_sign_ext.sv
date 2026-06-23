@@ -12,8 +12,8 @@
 //   JALR  (1100111): imm[11:0]  = inst[31:20]  (mesmo formato I)
 //   JAL   (1101111): imm[20]=inst[31], imm[19:12]=inst[19:12],
 //                    imm[11]=inst[20], imm[10:1]=inst[30:21], imm[0]=0
-//	  LUI   (0110111):imm[31:12]
-//	  Auipc (0010111):imm[31:12]
+//	 LUI   (0110111): imm[31:12]
+//	 Auipc (0010111): imm[31:12]
 // =============================================================================
 
 `timescale 1ns / 1ps
@@ -29,8 +29,8 @@ module pl_sign_ext (
     localparam BRANCH = 7'b1100011;
     localparam JALR   = 7'b1100111;
     localparam JAL    = 7'b1101111;
-	 localparam LUI    = 7'b0110111;
-	 localparam AUIPC  = 7'b0010111;
+	localparam LUI    = 7'b0110111;
+	localparam AUIPC  = 7'b0010111;
 
     always_comb begin
         case (Instr[6:0])
@@ -38,8 +38,8 @@ module pl_sign_ext (
 			
 			I_TYPE:begin
 				case(Instr[14:12])
-					3'b001: ImmExt = {{27{Instr[24]}}, Instr[24:20]};//slli
-					3'b101: ImmExt = {{27{Instr[24]}}, Instr[24:20]};//srli ou srai
+					3'b001:  ImmExt = {{27{Instr[24]}}, Instr[24:20]};//slli
+					3'b101:  ImmExt = {{27{Instr[24]}}, Instr[24:20]};//srli ou srai
 					default: ImmExt = {{20{Instr[31]}}, Instr[31:20]}; //addi,srti,ori,andi
 				endcase
 			end	
@@ -54,9 +54,9 @@ module pl_sign_ext (
             JAL:    ImmExt = {{11{Instr[31]}}, Instr[31], Instr[19:12],
                                Instr[20], Instr[30:21], 1'b0};
 										 
-				LUI:   ImmExt = {Instr[31:12],{12{1'b0}}};
+			LUI:    ImmExt = {Instr[31:12],12'b0};
 				
-				AUIPC: ImmExt = {Instr[31:12],{12{1'b0}}};
+			AUIPC:  ImmExt = {Instr[31:12],12'b0};
 
             default: ImmExt = 32'b0;
         endcase

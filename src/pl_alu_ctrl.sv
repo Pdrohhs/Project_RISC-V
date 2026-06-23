@@ -8,6 +8,7 @@
 //     2'b01 : Branch BEQ  -> forcar SUB
 //     2'b10 : R-type      -> decodificar via Funct3/Funct7
 //     2'b11 : I-type      -> decodifica via Funct3
+//	   2'b00 : Lui/Auipc   -> forcar ADD
 
 //   Funct7[6:0], Funct3[2:0] : campos da instrucao
 //

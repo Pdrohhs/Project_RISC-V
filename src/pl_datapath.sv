@@ -29,7 +29,8 @@ module pl_datapath (
     input  logic        rst_n,
 
     // Sinais de controle vindos do estagio ID (pl_control)
-    input  logic        ALUSrc,
+	input  logic [1:0]  ALUSrcA, //rs1, pc ou zero
+    input  logic        ALUSrcB, //rs2 ou imm
     input  logic        MemtoReg,
     input  logic        RegWrite,
     input  logic        MemRead,
@@ -89,7 +90,7 @@ module pl_datapath (
 
     // EX -- forwarding
     logic [1:0]  fwd_a, fwd_b;
-    logic [31:0] fwd_srca, fwd_srcb, alu_srcb;
+    logic [31:0] fwd_srca, fwd_srcb, alu_srca, alu_srcb;
     logic [31:0] alu_result;
     logic        zero;
     logic        branch_taken;
@@ -179,7 +180,8 @@ module pl_datapath (
     // =========================================================================
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            id_ex.alu_src    <= 1'b0;
+			id_ex.alu_src_a  <= 2'b0;
+            id_ex.alu_src_b  <= 1'b0;
             id_ex.mem_to_reg <= 1'b0;
             id_ex.reg_write  <= 1'b0;
             id_ex.mem_read   <= 1'b0;
@@ -198,7 +200,8 @@ module pl_datapath (
             id_ex.funct3     <= 3'b0;
             id_ex.funct7     <= 7'b0;
         end else if (stall || pc_src) begin
-            id_ex.alu_src    <= 1'b0;
+			id_ex.alu_src_a  <= 2'b0;
+            id_ex.alu_src_b  <= 1'b0;
             id_ex.mem_to_reg <= 1'b0;
             id_ex.reg_write  <= 1'b0;
             id_ex.mem_read   <= 1'b0;
@@ -217,7 +220,8 @@ module pl_datapath (
             id_ex.funct3     <= 3'b0;
             id_ex.funct7     <= 7'b0;
         end else begin
-            id_ex.alu_src    <= ALUSrc;
+			id_ex.alu_src_a  <= ALUSrcA;
+            id_ex.alu_src_b  <= ALUSrcB;
             id_ex.mem_to_reg <= MemtoReg;
             id_ex.reg_write  <= RegWrite;
             id_ex.mem_read   <= MemRead;
@@ -271,11 +275,18 @@ module pl_datapath (
             default: fwd_srcb = id_ex.rd2;
         endcase
     end
-
-    assign alu_srcb = id_ex.alu_src ? id_ex.imm_ext : fwd_srcb;
+	
+	always_comb begin
+		case(id_ex.alu_src_a)//define SrcA
+			2'b01: alu_srca = id_ex.pc;
+			2'b10: alu_srca = 32'b0;
+			default:  alu_srca = fwd_srca;
+		endcase
+	end
+    assign alu_srcb = id_ex.alu_src_b ? id_ex.imm_ext : fwd_srcb;//define SrcB
 
     pl_alu alu (
-        .SrcA      (fwd_srca),
+        .SrcA      (alu_srca),
         .SrcB      (alu_srcb),
         .Operation (ALU_CC),
         .ALUResult (alu_result),
@@ -303,7 +314,7 @@ module pl_datapath (
     //   JAL / B-type  -> PC + imm_ext
     // -------------------------------------------------------------------------
     logic is_jalr;
-    assign is_jalr = id_ex.jal_src & id_ex.alu_src; // JalSrc=1 e ALUSrc=1 -> JALR
+    assign is_jalr = id_ex.jal_src & id_ex.alu_srcb; // JalSrc=1 e ALUSrcb=1 -> JALR
 
     assign branch_target = is_jalr ? {alu_result[31:1], 1'b0}
                                    : id_ex.pc + id_ex.imm_ext;
@@ -349,7 +360,7 @@ module pl_datapath (
         .MemWrite  (ex_mem.mem_write & ~mmio_sel),
         .addr      (ex_mem.alu_result[9:2]),
         .WriteData (ex_mem.write_data),
-		  .funct3    (ex_mem.funct3),
+		.funct3    (ex_mem.funct3),
         .ReadData  (dmem_rd)
     );
 
