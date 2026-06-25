@@ -8,6 +8,7 @@
 //     2'b01 : Branch BEQ  -> forcar SUB
 //     2'b10 : R-type      -> decodificar via Funct3/Funct7
 //     2'b11 : I-type      -> decodifica via Funct3
+//	   2'b00 : Lui/Auipc   -> forcar ADD
 
 //   Funct7[6:0], Funct3[2:0] : campos da instrucao
 //
@@ -47,7 +48,17 @@ module pl_alu_ctrl (
         case (ALUOp)
             2'b00: Operation = 4'd01;   // Load / Store -> ADD
 
-            2'b01: Operation = 4'd02;   // Branch BEQ  -> SUB
+            2'b01: begin   // Branch BEQ  -> SUB
+                case (Funct3)
+                    3'h0: Operation = 4'd02;  // BEQ  -> SUB
+                    3'h1: Operation = 4'd02;  // BNE  -> SUB
+                    3'h4: Operation = 4'd11;  // BLT  -> SLT
+                    3'h5: Operation = 4'd11;  // BGE  -> SLT
+                    3'h6: Operation = 4'd09;  // BLTU -> SLTU
+                    3'h7: Operation = 4'd09;  // BGEU -> SLTU
+                    default: Operation = 4'd02;
+                endcase
+            end
 
             2'b10: begin                // R-type: decodificar Funct3/Funct7
                 case (Funct3)
