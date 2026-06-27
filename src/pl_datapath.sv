@@ -321,7 +321,7 @@ module pl_datapath (
     assign branch_target = is_jalr ? {alu_result[31:1], 1'b0}
                                    : id_ex.pc + id_ex.imm_ext;
 
-    assign pc_src = id_ex.branch && branch_taken;
+    assign pc_src = (id_ex.branch && branch_taken) || id_ex.jal_src;
 
     // =========================================================================
     // Registrador EX/MEM
