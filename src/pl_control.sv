@@ -34,29 +34,29 @@
 
 module pl_control (
     input  logic [6:0] Opcode,
-	output logic [1:0] ALUSrcA,
-    output logic       ALUSrcB,
+    output logic [1:0] ALUSrcA,  // 00=reg, 01=PC, 10=zero
+    output logic       ALUSrcB,  // 0=reg, 1=imm
     output logic       MemtoReg,
     output logic       RegWrite,
     output logic       MemRead,
     output logic       MemWrite,
     output logic       Branch,
-    output logic       JalSrc,    // 1 = wb_data recebe PC+4 (JAL/JALR)
+    output logic       JalSrc,
     output logic [1:0] ALUOp
 );
-
+ 
     localparam R_TYPE = 7'b0110011;
+    localparam I_TYPE = 7'b0010011;
     localparam LOAD   = 7'b0000011;
-	localparam I_TYPE = 7'b0010011;
     localparam STORE  = 7'b0100011;
     localparam BRANCH = 7'b1100011;
     localparam JAL    = 7'b1101111;
     localparam JALR   = 7'b1100111;
-	localparam LUI    = 7'b0110111;
-	localparam AUIPC  = 7'b0010111;
-
+    localparam LUI    = 7'b0110111;
+    localparam AUIPC  = 7'b0010111;
+ 
     always_comb begin
-		ALUSrcA  = 2'b00;
+        ALUSrcA  = 2'b00;
         ALUSrcB  = 1'b0;
         MemtoReg = 1'b0;
         RegWrite = 1'b0;
@@ -65,74 +65,85 @@ module pl_control (
         Branch   = 1'b0;
         JalSrc   = 1'b0;
         ALUOp    = 2'b00;
-
+ 
         case (Opcode)
             R_TYPE: begin
-                ALUSrcB  = 1'b0;
+                ALUSrcA  = 2'b00;  // rs1
+                ALUSrcB  = 1'b0;   // rs2
                 MemtoReg = 1'b0;
                 RegWrite = 1'b1;
                 ALUOp    = 2'b10;
             end
-			
-			I_TYPE: begin
-				ALUSrcB  = 1'b1;
-				MemtoReg = 1'b0;
-				RegWrite = 1'b1;
-				MemRead  = 1'b0;
-				ALUOp    = 2'b11;
-				
-			end
-			
+ 
+            I_TYPE: begin
+                ALUSrcA  = 2'b00;  // rs1
+                ALUSrcB  = 1'b1;   // imm
+                MemtoReg = 1'b0;
+                RegWrite = 1'b1;
+                ALUOp    = 2'b11;
+            end
+ 
             LOAD: begin
-                ALUSrcB  = 1'b1;
+                ALUSrcA  = 2'b00;  // rs1
+                ALUSrcB  = 1'b1;   // imm
                 MemtoReg = 1'b1;
                 RegWrite = 1'b1;
                 MemRead  = 1'b1;
                 ALUOp    = 2'b00;
             end
-			
+ 
             STORE: begin
-                ALUSrcB  = 1'b1;
+                ALUSrcA  = 2'b00;  // rs1
+                ALUSrcB  = 1'b1;   // imm
                 MemWrite = 1'b1;
                 ALUOp    = 2'b00;
             end
-			
+ 
             BRANCH: begin
+                ALUSrcA  = 2'b00;  // rs1
+                ALUSrcB  = 1'b0;   // rs2
                 Branch   = 1'b1;
                 ALUOp    = 2'b01;
             end
-			
+ 
             JAL: begin
+                // ALU nao calcula target; datapath usa PC + imm diretamente
+                // ALUSrcB = 0 distingue JAL de JALR no datapath (is_jalr)
+                ALUSrcA  = 2'b00;
+                ALUSrcB  = 1'b0;   // FIX: explicitado — JAL nao usa ALU para target
                 RegWrite = 1'b1;
                 Branch   = 1'b1;
                 JalSrc   = 1'b1;
-                ALUOp    = 2'b00;  // ALU nao e usada; target = PC + imm no datapath
+                ALUOp    = 2'b00;
             end
-			
+ 
             JALR: begin
-                ALUSrcB  = 1'b1;   // SrcB = imediato (rs1 + imm via ALU)
+                // ALU calcula rs1 + imm; bit 0 forcado a 0 no datapath
+                ALUSrcA  = 2'b00;  // rs1
+                ALUSrcB  = 1'b1;   // imm  ← ALUSrcB=1 distingue JALR de JAL
                 RegWrite = 1'b1;
                 Branch   = 1'b1;
                 JalSrc   = 1'b1;
-                ALUOp    = 2'b00;  // ADD: calcula rs1 + imm
+                ALUOp    = 2'b00;  // ADD: rs1 + imm
             end
-			
-			LUI: begin
-				ALUSrcA  = 2'b10;
-                ALUSrcB  = 1'b1; 
+ 
+            LUI: begin
+                ALUSrcA  = 2'b10;  // zero (ALU faz 0 + imm = imm)
+                ALUSrcB  = 1'b1;   // imm
                 MemtoReg = 1'b0;
                 RegWrite = 1'b1;
-                MemRead  = 1'b0;
                 ALUOp    = 2'b00;
-				
-			AUIPC: begin
-				ALUSrcA  = 2'b01;
-                ALUSrcB  = 1'b1;
+            end  // FIX: end que estava faltando — AUIPC estava dentro do bloco LUI
+ 
+            AUIPC: begin
+                ALUSrcA  = 2'b01;  // PC (ALU faz PC + imm)
+                ALUSrcB  = 1'b1;   // imm
                 RegWrite = 1'b1;
-                ALUOp    = 2'b00; //Add
+                ALUOp    = 2'b00;
             end
-            default: ; // sinais permanecem em zero (seguro)
+ 
+            default: ; // todos os sinais ja estao em zero (seguro)
         endcase
     end
-
+ 
 endmodule

@@ -38,8 +38,8 @@ module pl_sign_ext (
 			
 			I_TYPE:begin
 				case(Instr[14:12])
-					3'b001:  ImmExt = {{27{Instr[24]}}, Instr[24:20]};//slli
-					3'b101:  ImmExt = {{27{Instr[24]}}, Instr[24:20]};//srli ou srai
+					3'b001: ImmExt = {27'b0, Instr[24:20]};//slli
+					3'b101: ImmExt = {27'b0, Instr[24:20]};//srli ou srai
 					default: ImmExt = {{20{Instr[31]}}, Instr[31:20]}; //addi,srti,ori,andi
 				endcase
 			end	

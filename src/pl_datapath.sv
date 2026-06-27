@@ -316,7 +316,7 @@ module pl_datapath (
     //   JAL / B-type  -> PC + imm_ext
     // -------------------------------------------------------------------------
     logic is_jalr;
-    assign is_jalr = id_ex.jal_src & id_ex.alu_srcb; // JalSrc=1 e ALUSrcb=1 -> JALR
+    assign is_jalr = id_ex.jal_src & id_ex.alu_src_b; // JalSrc=1 e ALUSrcb=1 -> JALR
 
     assign branch_target = is_jalr ? {alu_result[31:1], 1'b0}
                                    : id_ex.pc + id_ex.imm_ext;
@@ -360,7 +360,7 @@ module pl_datapath (
     pl_dmem dmem (
         .clk       (clk),
         .MemWrite  (ex_mem.mem_write & ~mmio_sel),
-		.MenRead   (ex_mem.mem_read & ~mmio_sel),
+		.MemRead   (ex_mem.mem_read & ~mmio_sel),
         .addr      (ex_mem.alu_result[9:2]),
 		.ByteOffset(ex_mem.alu_result[1:0]),
         .WriteData (ex_mem.write_data),

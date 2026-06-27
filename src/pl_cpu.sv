@@ -45,7 +45,10 @@ module pl_cpu (
     // -------------------------------------------------------------------------
     logic [6:0] opcode;
 
-    logic       ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, JalSrc;
+    logic [1:0] ALUSrcA;
+    logic       ALUSrcB;
+
+    logic       MemtoReg, RegWrite, MemRead, MemWrite, Branch, JalSrc;
     logic [1:0] ALUOp;
 
     logic [2:0] funct3_ex;
@@ -58,7 +61,8 @@ module pl_cpu (
     // -------------------------------------------------------------------------
     pl_control ctrl (
         .Opcode   (opcode),
-        .ALUSrc   (ALUSrc),
+        .ALUSrcA  (ALUSrcA),
+        .ALUSrcB  (ALUSrcB),
         .MemtoReg (MemtoReg),
         .RegWrite (RegWrite),
         .MemRead  (MemRead),
@@ -84,7 +88,8 @@ module pl_cpu (
     pl_datapath datapath (
         .clk          (clk),
         .rst_n        (rst_n),
-        .ALUSrc       (ALUSrc),
+        .ALUSrcA      (ALUSrcA),
+        .ALUSrcB      (ALUSrcB),
         .MemtoReg     (MemtoReg),
         .RegWrite     (RegWrite),
         .MemRead      (MemRead),

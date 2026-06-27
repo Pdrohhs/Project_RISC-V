@@ -20,8 +20,8 @@ package pl_pipe_pkg;
     // ---- ID/EX --------------------------------------------------------------
     typedef struct packed {
         // sinais de controle propagados para os estagios seguintes
-		logic [1:0]  alu_srca;
-        logic        alu_srcb;
+		logic [1:0]  alu_src_a;
+        logic        alu_src_b;
         logic        mem_to_reg;
         logic        reg_write;
         logic        mem_read;
