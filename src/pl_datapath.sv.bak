@@ -182,8 +182,8 @@ module pl_datapath (
     // =========================================================================
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-			id_ex.alu_srca  <= 2'b0;
-            id_ex.alu_srcb  <= 1'b0;
+			id_ex.alu_src_a  <= 2'b0;
+            id_ex.alu_src_b  <= 1'b0;
             id_ex.mem_to_reg <= 1'b0;
             id_ex.reg_write  <= 1'b0;
             id_ex.mem_read   <= 1'b0;
@@ -202,8 +202,8 @@ module pl_datapath (
             id_ex.funct3     <= 3'b0;
             id_ex.funct7     <= 7'b0;
         end else if (stall || pc_src) begin
-			id_ex.alu_srca  <= 2'b0;
-            id_ex.alu_srcb  <= 1'b0;
+			id_ex.alu_src_a  <= 2'b0;
+            id_ex.alu_src_b  <= 1'b0;
             id_ex.mem_to_reg <= 1'b0;
             id_ex.reg_write  <= 1'b0;
             id_ex.mem_read   <= 1'b0;
@@ -222,8 +222,8 @@ module pl_datapath (
             id_ex.funct3     <= 3'b0;
             id_ex.funct7     <= 7'b0;
         end else begin
-			id_ex.alu_srca  <= ALUSrcA;
-            id_ex.alu_srcb  <= ALUSrcB;
+			id_ex.alu_src_a  <= ALUSrcA;
+            id_ex.alu_src_b  <= ALUSrcB;
             id_ex.mem_to_reg <= MemtoReg;
             id_ex.reg_write  <= RegWrite;
             id_ex.mem_read   <= MemRead;
@@ -279,13 +279,13 @@ module pl_datapath (
     end
 	
 	always_comb begin
-		case(id_ex.alu_srca)//define SrcA
+		case(id_ex.alu_src_a)//define SrcA
 			2'b01: alu_srca = id_ex.pc;
 			2'b10: alu_srca = 32'b0;
 			default:  alu_srca = fwd_srca;
 		endcase
 	end
-    assign alu_srcb = id_ex.alu_srcb ? id_ex.imm_ext : fwd_srcb;//define SrcB
+    assign alu_srcb = id_ex.alu_src_b ? id_ex.imm_ext : fwd_srcb;//define SrcB
 
     pl_alu alu (
         .SrcA      (alu_srca),
@@ -360,7 +360,7 @@ module pl_datapath (
     pl_dmem dmem (
         .clk       (clk),
         .MemWrite  (ex_mem.mem_write & ~mmio_sel),
-		.MemRead   (ex_mem.mem_read & ~mmio_sel),
+		.MenRead   (ex_mem.mem_read & ~mmio_sel),
         .addr      (ex_mem.alu_result[9:2]),
 		.ByteOffset(ex_mem.alu_result[1:0]),
         .WriteData (ex_mem.write_data),

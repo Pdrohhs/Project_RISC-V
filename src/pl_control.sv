@@ -124,7 +124,7 @@ module pl_control (
                 RegWrite = 1'b1;
                 MemRead  = 1'b0;
                 ALUOp    = 2'b00;
-				
+				end
 			AUIPC: begin
 				ALUSrcA  = 2'b01;
                 ALUSrcB  = 1'b1;
