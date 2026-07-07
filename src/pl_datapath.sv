@@ -29,7 +29,8 @@ module pl_datapath (
     input  logic        rst_n,
 
     // Sinais de controle vindos do estagio ID (pl_control)
-    input  logic        ALUSrc,
+	input  logic [1:0]  ALUSrcA, //rs1, pc ou zero
+    input  logic        ALUSrcB, //rs2 ou imm
     input  logic        MemtoReg,
     input  logic        RegWrite,
     input  logic        MemRead,
@@ -89,7 +90,7 @@ module pl_datapath (
 
     // EX -- forwarding
     logic [1:0]  fwd_a, fwd_b;
-    logic [31:0] fwd_srca, fwd_srcb, alu_srcb;
+    logic [31:0] fwd_srca, fwd_srcb, alu_srca, alu_srcb;
     logic [31:0] alu_result;
     logic        zero;
     logic        branch_taken;
@@ -99,7 +100,9 @@ module pl_datapath (
 
     // MEM
     logic        mmio_sel;
-    logic [31:0] dmem_rd, mmio_rd, mem_read_data;
+    logic [31:0] dmem_rd, mmio_rd, mem_read_data, load_data;
+	logic [7:0]  selected_byte;
+	logic [15:0] selected_half;
 
     // =========================================================================
     // IF -- Busca de instrucao
@@ -179,7 +182,8 @@ module pl_datapath (
     // =========================================================================
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            id_ex.alu_src    <= 1'b0;
+			id_ex.alu_src_a  <= 2'b0;
+            id_ex.alu_src_b  <= 1'b0;
             id_ex.mem_to_reg <= 1'b0;
             id_ex.reg_write  <= 1'b0;
             id_ex.mem_read   <= 1'b0;
@@ -198,7 +202,8 @@ module pl_datapath (
             id_ex.funct3     <= 3'b0;
             id_ex.funct7     <= 7'b0;
         end else if (stall || pc_src) begin
-            id_ex.alu_src    <= 1'b0;
+			id_ex.alu_src_a  <= 2'b0;
+            id_ex.alu_src_b  <= 1'b0;
             id_ex.mem_to_reg <= 1'b0;
             id_ex.reg_write  <= 1'b0;
             id_ex.mem_read   <= 1'b0;
@@ -217,7 +222,8 @@ module pl_datapath (
             id_ex.funct3     <= 3'b0;
             id_ex.funct7     <= 7'b0;
         end else begin
-            id_ex.alu_src    <= ALUSrc;
+			id_ex.alu_src_a  <= ALUSrcA;
+            id_ex.alu_src_b  <= ALUSrcB;
             id_ex.mem_to_reg <= MemtoReg;
             id_ex.reg_write  <= RegWrite;
             id_ex.mem_read   <= MemRead;
@@ -271,11 +277,18 @@ module pl_datapath (
             default: fwd_srcb = id_ex.rd2;
         endcase
     end
-
-    assign alu_srcb = id_ex.alu_src ? id_ex.imm_ext : fwd_srcb;
+	
+	always_comb begin
+		case(id_ex.alu_src_a)//define SrcA
+			2'b01: alu_srca = id_ex.pc;
+			2'b10: alu_srca = 32'b0;
+			default:  alu_srca = fwd_srca;
+		endcase
+	end
+    assign alu_srcb = id_ex.alu_src_b ? id_ex.imm_ext : fwd_srcb;//define SrcB
 
     pl_alu alu (
-        .SrcA      (fwd_srca),
+        .SrcA      (alu_srca),
         .SrcB      (alu_srcb),
         .Operation (ALU_CC),
         .ALUResult (alu_result),
@@ -303,12 +316,12 @@ module pl_datapath (
     //   JAL / B-type  -> PC + imm_ext
     // -------------------------------------------------------------------------
     logic is_jalr;
-    assign is_jalr = id_ex.jal_src & id_ex.alu_src; // JalSrc=1 e ALUSrc=1 -> JALR
+    assign is_jalr = id_ex.jal_src & id_ex.alu_src_b; // JalSrc=1 e ALUSrcb=1 -> JALR
 
     assign branch_target = is_jalr ? {alu_result[31:1], 1'b0}
                                    : id_ex.pc + id_ex.imm_ext;
 
-    assign pc_src = id_ex.branch && branch_taken;
+    assign pc_src = (id_ex.branch && branch_taken) || id_ex.jal_src;
 
     // =========================================================================
     // Registrador EX/MEM
@@ -347,10 +360,12 @@ module pl_datapath (
     pl_dmem dmem (
         .clk       (clk),
         .MemWrite  (ex_mem.mem_write & ~mmio_sel),
+		.MemRead   (ex_mem.mem_read & ~mmio_sel),
         .addr      (ex_mem.alu_result[9:2]),
+		.ByteOffset(ex_mem.alu_result[1:0]),
         .WriteData (ex_mem.write_data),
-		  .funct3    (ex_mem.funct3),
-        .ReadData  (dmem_rd)
+		.funct3    (ex_mem.funct3),
+        .ReadData  (dmem_rd)//output mem
     );
 
     pl_mmio mmio (
@@ -368,8 +383,37 @@ module pl_datapath (
         .UART_TXD  (UART_TXD),
         .UART_RXD  (UART_RXD)
     );
-
-    assign mem_read_data = mmio_sel ? mmio_rd : dmem_rd;
+	
+	always_comb begin
+		case(ex_mem.alu_result[1:0])
+			2'b00: selected_byte = dmem_rd[7:0];
+			2'b01: selected_byte = dmem_rd[15:8];
+			2'b10: selected_byte = dmem_rd[23:16];
+			2'b11: selected_byte = dmem_rd[31:24];
+		endcase
+		case(ex_mem.alu_result[1])
+			1'b0: selected_half = dmem_rd[15:0];
+			1'b1: selected_half = dmem_rd[31:16];
+		endcase
+	end
+	
+	always_comb begin
+		    if (!ex_mem.mem_read)
+				load_data = 32'b0;
+		else begin
+			case(ex_mem.funct3)
+				3'b000: load_data = {{24{selected_byte[7]}},selected_byte};//Lb
+				3'b001: load_data = {{16{selected_half[15]}},selected_half};// LH
+				3'b010:	load_data = dmem_rd;// LW
+				3'b100: load_data = {24'b0,selected_byte};// LBU
+				3'b101: load_data = {16'b0,selected_half};// LHU
+				default:load_data = dmem_rd;
+			endcase
+		end
+	end
+		
+	
+    assign mem_read_data = mmio_sel ? mmio_rd : load_data;
 
     assign mem_wr_en   = ex_mem.mem_write & ~mmio_sel;
     assign mem_wr_addr = ex_mem.alu_result[9:2];
